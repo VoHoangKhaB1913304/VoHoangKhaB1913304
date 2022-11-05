@@ -1,66 +1,25 @@
-const { ObjectId } = require("mongodb");
-
-class ContactService { 
-    constructor (client) {
-        this.Contact = client.db().collection("contacts");
-    }
-// Định nghĩa các phương thức truy xuất CSDL sử dụng mongodb API
-async find (filter) {
-    const cursor = await this. Contact.find(filter); return await cursor.toArray();
-    }
-    async findByName(name) {
-    return await this.find({
-    name: { $regex: new RegExp(name), $options: "" },
-    });
+import createApiClient from "./api.service";
+class ContactService {
+constructor(baseUrl = "/api/contacts") {
+this.api = createApiClient(baseUrl);
 }
-    extractConactData(payload) {
-        const contact = {
-            name: payload.name,
-            email: payload.email,
-            address: payload.address,
-            phone: payload.phone,
-            favorite: payload.favorite,
-        };
-    // Remove undefined fields
-        Objects.keys(contact).forEach(
-            (key) => contact[key] === undefined && delete contact[key]
-        );
-        return contact;
-    }
-    async findById(id) {
-        return await this.Contact.findOne({
-        _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
-        });
-    }
-    async update(id, payload) {
-        const filter = {
-            _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
-        };
-        const update = this.extractConactData(payload);
-        const result = await this.Contact.findOneAndUpdate(
-            filter,
-            { $set: update },
-            { returnDocument: "after" }
-        );
-        return result.value;
-    }
-    
-    async create(payload) {
-        const contact = this.extractConactData(payload);
-        const result = await this.Contact.findOneAndUpdate(
-        contact,
-            { $set: { favorite: contact.favorite === true } },
-            { returnDocument: "after", upsert: true }
-    );
-    return result.value;
-    }
-    async delete(id) {
-        const result = await this.Contact.findOneAndDelete({
-        _id: ObjectId.isValid(id) ? new ObjectId(id) : null,
-        });
-        return result.value;
-        }
-    
+async getAll() {
+return (await this.api.get("/")).data;
 }
-
-module.exports = ContactService;
+async create(data) {
+return (await this.api.post("/", data)).data;
+}
+async deleteAll() {
+return (await this.api.delete("/")).data;
+}
+async get(id) {
+return (await this.api.get(`/${id}`)).data;
+}
+async update(id, data) {
+return (await this.api.put(`/${id}`, data)).data;
+}
+async delete(id) {
+return (await this.api.delete(`/${id}`)).data;
+}
+}
+export default new ContactService();
